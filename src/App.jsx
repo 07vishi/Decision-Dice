@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Confetti from 'react-confetti';
-import InputForm from './components/InputForm';
+import { motion } from 'framer-motion';
+import CustomDice from './components/CustomDice';
 
 // Define the useWindowSize Hook
 function useWindowSize() {
@@ -18,8 +19,6 @@ function useWindowSize() {
     };
 
     window.addEventListener('resize', handleResize);
-
-    // Clean up event listener on component unmount
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -27,72 +26,22 @@ function useWindowSize() {
 }
 
 function App() {
-  const [choices, setChoices] = useState([]);
-  const [input, setInput] = useState('');
-  const [result, setResult] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [isDeciding, setIsDeciding] = useState(false);
   const [windowWidth, windowHeight] = useWindowSize();
-  const [theme, setTheme] = useState('dark'); // Changed default to dark
+  const [theme, setTheme] = useState('dark');
 
-  // Load saved choices and theme from localStorage
+  // Load theme from localStorage
   useEffect(() => {
-    const savedChoices = localStorage.getItem('decisionDiceChoices');
-    const savedTheme = localStorage.getItem('decisionDiceTheme') || 'dark'; // Default to 'dark' if no theme in localStorage
-    if (savedChoices) {
-      setChoices(JSON.parse(savedChoices));
-    }
+    const savedTheme = localStorage.getItem('decisionDiceTheme') || 'dark';
     setTheme(savedTheme);
+    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
   }, []);
 
-  // Save choices and theme to localStorage
+  // Save theme to localStorage
   useEffect(() => {
-    localStorage.setItem('decisionDiceChoices', JSON.stringify(choices));
     localStorage.setItem('decisionDiceTheme', theme);
-  }, [choices, theme]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (input.trim()) {
-      setChoices([...choices, input.trim()]);
-      setInput('');
-    }
-  };
-
-  const deleteChoice = (index) => {
-    setChoices(choices.filter((_, i) => i !== index));
-  };
-
-  const shuffleChoices = () => {
-    setChoices([...choices].sort(() => Math.random() - 0.5));
-  };
-
-  const clearAll = () => {
-    setChoices([]);
-    setResult('');
-  };
-
-  const decide = () => {
-    if (choices.length === 0) return;
-    
-    setIsDeciding(true);
-    let currentIndex = 0;
-    const interval = setInterval(() => {
-      setResult(choices[currentIndex]);
-      currentIndex = (currentIndex + 1) % choices.length;
-    }, 100);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      const finalChoice = choices[Math.floor(Math.random() * choices.length)];
-      setResult(finalChoice);
-      setHistory((prevHistory) => [finalChoice, ...prevHistory].slice(0, 10)); // Limit history to 10 items
-      setShowConfetti(true);
-      setIsDeciding(false);
-      setTimeout(() => setShowConfetti(false), 3000);
-    }, 2000);
-  };
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -102,99 +51,121 @@ function App() {
     dark: {
       bg: 'from-gray-900 via-gray-800 to-gray-900',
       text: 'text-gray-200',
-      border: 'border-gray-700/20',
-      shadow: 'shadow-gray-900/10',
-      gradient: 'from-gray-700 to-gray-800',
-      glass: 'bg-gray-900/30',
+      textSecondary: 'text-gray-400',
+      button: 'bg-gray-800/50 hover:bg-gray-700/50',
+      overlay: 'bg-black/30'
     },
     light: {
-      bg: 'from-blue-50 via-indigo-50 to-purple-50',
-      text: 'text-gray-800',
-      border: 'border-gray-300/20',
-      shadow: 'shadow-gray-400/10',
-      gradient: 'from-blue-400 to-indigo-500',
-      glass: 'bg-white/30',
+      bg: 'from-sky-100 via-blue-50 to-indigo-100',
+      text: 'text-slate-800',
+      textSecondary: 'text-slate-600',
+      button: 'bg-white/80 hover:bg-white shadow-lg ring-1 ring-slate-200/50',
+      overlay: 'bg-gradient-to-b from-white/60 to-blue-50/30'
     },
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background animation */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute -bottom-32 left-20 w-96 h-96 bg-pink-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" style={{ animationDelay: '4s' }}></div>
+    <div className={`min-h-screen relative overflow-hidden ${
+      theme === 'dark' 
+        ? 'bg-[#0f172a] text-white' 
+        : 'bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 text-slate-900'
+    }`}>
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className={`absolute w-full h-full ${
+          theme === 'dark'
+            ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-purple-900/20 to-pink-900/20'
+            : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400/10 via-sky-300/10 to-indigo-300/10'
+        }`}></div>
+        <motion.div
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          className={`absolute inset-0 opacity-30 ${
+            theme === 'dark'
+              ? "bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%239C92AC%22%20fill-opacity%3D%220.4%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')]"
+              : "bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%230EA5E9%22%20fill-opacity%3D%220.2%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')]"
+          }`}
+        />
       </div>
 
-      <div className="w-full max-w-md mx-auto relative z-10">
+      {/* Theme Toggle */}
+      <motion.button
+        onClick={toggleTheme}
+        className={`fixed top-4 right-4 p-3 rounded-full backdrop-blur-md
+          ${theme === 'dark'
+            ? 'bg-gray-800/50 hover:bg-gray-700/50 text-yellow-300 shadow-lg'
+            : 'bg-white hover:bg-white/90 text-sky-500 shadow-lg ring-1 ring-slate-200/50'
+          } transition-all`}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </motion.button>
+
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 flex items-center justify-center gap-3">
-            🎲 Decision Dice
-          </h1>
-          <p className="text-white/80 text-lg">Let fate decide for you!</p>
-        </div>
-
-        {/* Input form */}
-        <form onSubmit={handleSubmit} className="mb-6">
-          <div className="glass-effect rounded-2xl p-1">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Add your choice..."
-              className="w-full bg-transparent text-white placeholder-white/60 px-4 py-3 rounded-xl focus:outline-none"
-            />
-          </div>
-        </form>
-
-        {/* Choices */}
-        <div className="space-y-3 mb-6">
-          {choices.map((choice, index) => (
-            <div
-              key={index}
-              className="choice-card flex items-center justify-between group"
-            >
-              <span className="text-white">{choice}</span>
-              <button
-                onClick={() => deleteChoice(index)}
-                className="text-white/60 hover:text-white/90 transition-colors"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Decision button */}
-        <button
-          onClick={decide}
-          disabled={choices.length === 0 || isDeciding}
-          className="primary-button w-full"
+        <motion.div
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, type: "spring" }}
+          className="text-center mb-12"
         >
-          {isDeciding ? 'Deciding...' : choices.length === 0 ? 'Add some choices first!' : 'Decide For Me!'}
-        </button>
-
-        {/* Result */}
-        {result && (
-          <div className="mt-8 text-center animate-float">
-            <div className="glass-effect rounded-2xl p-6 inline-block">
-              <div className="text-white/80 text-lg mb-2">🎉 The chosen one is:</div>
-              <div className="text-white text-2xl font-bold">{result}</div>
-            </div>
+          <div className="inline-block mb-4">
+            <motion.div
+              animate={{ rotateY: 360 }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+              className="text-6xl md:text-7xl filter drop-shadow-2xl"
+            >
+              🎲
+            </motion.div>
           </div>
-        )}
+          <h1 className={`text-4xl md:text-5xl font-bold mb-4 ${
+            theme === 'dark' ? 'text-white' : 'text-slate-800'
+          } tracking-tight drop-shadow-sm`}>
+            Decision Dice
+          </h1>
+          <p className={`text-lg ${
+            theme === 'dark' ? 'text-gray-300' : 'text-slate-600'
+          }`}>
+            Let fate decide for you!
+          </p>
+        </motion.div>
 
-        {/* Confetti effect */}
-        {showConfetti && (
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={200}
-          />
-        )}
+        {/* Main Content */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className={`max-w-md mx-auto ${
+            theme === 'dark'
+              ? 'bg-gray-800/40 border border-gray-700/50'
+              : 'bg-white/90 shadow-xl shadow-sky-100 ring-1 ring-sky-100'
+          } backdrop-blur-md rounded-2xl p-6`}
+        >
+          <CustomDice theme={theme} onShowConfetti={() => setShowConfetti(true)} />
+        </motion.div>
       </div>
+
+      {/* Confetti */}
+      {showConfetti && (
+        <Confetti
+          width={windowWidth}
+          height={windowHeight}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.2}
+          colors={theme === 'dark' 
+            ? ['#60A5FA', '#818CF8', '#A78BFA', '#F472B6', '#34D399'] 
+            : ['#0EA5E9', '#38BDF8', '#2563EB', '#6366F1', '#0284C7']
+          }
+        />
+      )}
     </div>
   );
 }
