@@ -4,6 +4,7 @@
   padding: 2rem;
   text-align: center;
 }
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
@@ -16,8 +17,6 @@
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-
-
 
 .logo {
   height: 6em;
